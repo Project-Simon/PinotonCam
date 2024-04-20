@@ -167,14 +167,14 @@ void V4L2M2MConverter::Stream::outputBufferReady(FrameBuffer *buffer)
 		return;
 
 	if (!--it->second) {
-		converter_->inputBufferReady.emit(buffer);
+		converter_->inputBufferReady.send(buffer);
 		converter_->queue_.erase(it);
 	}
 }
 
 void V4L2M2MConverter::Stream::captureBufferReady(FrameBuffer *buffer)
 {
-	converter_->outputBufferReady.emit(buffer);
+	converter_->outputBufferReady.send(buffer);
 }
 
 /* -----------------------------------------------------------------------------

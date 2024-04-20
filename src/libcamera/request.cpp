@@ -130,7 +130,7 @@ void Request::Private::doCancelRequest()
 
 	for (FrameBuffer *buffer : pending_) {
 		buffer->_d()->cancel();
-		camera_->bufferCompleted.emit(request, buffer);
+		camera_->bufferCompleted.send(request, buffer);
 	}
 
 	cancelled_ = true;
@@ -144,7 +144,7 @@ void Request::Private::doCancelRequest()
  *
  * Mark the request and its associated buffers as cancelled and complete it.
  *
- * Set each pending buffer in error state and emit the buffer completion signal
+ * Set each pending buffer in error state and send the buffer completion signal
  * before completing the Request.
  */
 void Request::Private::cancel()
@@ -175,12 +175,12 @@ void Request::Private::reset()
 
 /*
  * Helper function to save some lines of code and make sure prepared_ is set
- * to true before emitting the signal.
+ * to true before sending the signal.
  */
-void Request::Private::emitPrepareCompleted()
+void Request::Private::sendPrepareCompleted()
 {
 	prepared_ = true;
-	prepared.emit();
+	prepared.send();
 }
 
 /**
@@ -195,20 +195,20 @@ void Request::Private::emitPrepareCompleted()
  * fences have been signalled correctly before the timeout expires the Request
  * is cancelled.
  *
- * The function immediately emits the prepared signal if all the prepare
+ * The function immediately sends the prepared signal if all the prepare
  * operations have been completed synchronously. If instead the prepare
  * operations require to wait the completion of asynchronous events, such as
- * fences notifications or timer expiration, the prepared signal is emitted upon
+ * fences notifications or timer expiration, the prepared signal is sended upon
  * the asynchronous event completion.
  *
- * As we currently only handle fences, the function emits the prepared signal
+ * As we currently only handle fences, the function sends the prepared signal
  * immediately if there are no fences to wait on. Otherwise the prepared signal
- * is emitted when all fences have been signalled or the optional timeout has
+ * is sended when all fences have been signalled or the optional timeout has
  * expired.
  *
  * If not all the fences have been correctly signalled or the optional timeout
  * has expired the Request will be cancelled and the Request::prepared signal
- * emitted.
+ * sended.
  *
  * The intended user of this function is the PipelineHandler base class, which
  * 'prepares' a Request before queuing it to the hardware device.
@@ -233,7 +233,7 @@ void Request::Private::prepare(std::chrono::milliseconds timeout)
 	}
 
 	if (notifiers_.empty()) {
-		emitPrepareCompleted();
+		sendPrepareCompleted();
 		return;
 	}
 
@@ -254,7 +254,7 @@ void Request::Private::prepare(std::chrono::milliseconds timeout)
  * \var Request::Private::prepared
  * \brief Request preparation completed Signal
  *
- * The signal is emitted once the request preparation has completed and is ready
+ * The signal is sended once the request preparation has completed and is ready
  * to be queued. The Request might complete with errors in which case it is
  * cancelled.
  *
@@ -282,9 +282,9 @@ void Request::Private::notifierActivated(FrameBuffer *buffer)
 	if (!notifiers_.empty())
 		return;
 
-	/* All fences completed, delete the timer and emit the prepared signal. */
+	/* All fences completed, delete the timer and send the prepared signal. */
 	timer_.reset();
-	emitPrepareCompleted();
+	sendPrepareCompleted();
 }
 
 void Request::Private::timeout()
@@ -298,7 +298,7 @@ void Request::Private::timeout()
 
 	cancel();
 
-	emitPrepareCompleted();
+	sendPrepareCompleted();
 }
 
 /**
